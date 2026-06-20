@@ -29,15 +29,5 @@ class TrainingConfig:
                              f"integer bigger than 0. "
                              f"Current Value: {self.batch_size}")
 
-        if not self.checkpoint_path.exists():
-            raise FileNotFoundError(f"The current checkpoints path "
-                                    f"doesn't exist. "
-                                    f"Check if the path is correct "
-                                    f"or has been created. "
-                                    f"Current path: {self.checkpoint_path}")
-
-        if not self.log_path.exists():
-            raise FileNotFoundError(f"The current logs path doesn't exist. "
-                                    f"Check if the path is correct "
-                                    f"or has been created. "
-                                    f"Current path: {self.log_path}")
+        self.checkpoint_path.mkdir(parents=True, exist_ok=True)
+        self.log_path.mkdir(parents=True, exist_ok=True)
