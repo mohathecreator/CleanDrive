@@ -13,3 +13,10 @@ class EnvironmentWrapper(Env):
 
     def reset(self, *, seed=None, options=None):
         return self._metadrive_env.reset(seed=seed, options=options)
+
+    def step(self, action):
+        observation, metadrive_reward, terminated, truncated, info = (
+            self._metadrive_env.step(action)
+        )
+        reward = self.reward_strategy.compute(observation, action, info)
+        return observation, reward, terminated, truncated, info
