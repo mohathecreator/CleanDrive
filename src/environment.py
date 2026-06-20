@@ -12,7 +12,7 @@ class EnvironmentWrapper(Env):
         self.observation_space = self._metadrive_env.observation_space
 
     def reset(self, *, seed=None, options=None):
-        return self._metadrive_env.reset(seed=seed, options=options)
+        return self._metadrive_env.reset(seed=seed)
 
     def step(self, action):
         observation, metadrive_reward, terminated, truncated, info = (
