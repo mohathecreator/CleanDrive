@@ -6,6 +6,7 @@ from agent import AgentManager
 class TrainingOrchestrator:
     def __init__(self, config: TrainingConfig):
         self.config = config
+        self.config.validate()
         self.environment = EnvironmentWrapper(config)
         self.agent_manager = AgentManager()
 
