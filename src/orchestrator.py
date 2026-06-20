@@ -1,6 +1,6 @@
+from agent import AgentManager
 from config import TrainingConfig
 from environment import EnvironmentWrapper
-from agent import AgentManager
 
 
 class TrainingOrchestrator:
