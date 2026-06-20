@@ -20,3 +20,6 @@ class EnvironmentWrapper(Env):
         )
         reward = self.reward_strategy.compute(observation, action, info)
         return observation, reward, terminated, truncated, info
+
+    def close(self):
+        return self._metadrive_env.close()
