@@ -5,8 +5,8 @@ class AgentManager:
     def __init__(self):
         self.model = None
 
-    def create_model(self, env):
-        self.model = PPO("MlpPolicy", env)
+    def create_model(self, env, tensorboard_log=None):
+        self.model = PPO("MlpPolicy", env, tensorboard_log=tensorboard_log)
 
     def train(self, total_timesteps):
         if self.model is None:

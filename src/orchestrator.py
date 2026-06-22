@@ -11,6 +11,8 @@ class TrainingOrchestrator:
         self.agent_manager = AgentManager()
 
     def run(self):
-        self.agent_manager.create_model(self.environment)
+        self.agent_manager.create_model(
+            self.environment, tensorboard_log=str(self.config.log_path)
+        )
         self.agent_manager.train(self.config.total_timesteps)
         self.agent_manager.save(self.config.checkpoint_path / "ppo_model")
