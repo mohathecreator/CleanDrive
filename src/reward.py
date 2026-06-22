@@ -8,13 +8,31 @@ class RewardStrategy(ABC):
 
 
 class SpeedRewardStrategy(RewardStrategy):
-    def __init__(self, speed_weigth: float = 1.0,
-                 crash_penalty: float = -10.0):
+    def __init__(self, speed_weigth: float = 10):
         self.speed_weight = speed_weigth
-        self.crash_penalty = crash_penalty
 
     def compute(self, observation, action, info) -> float:
         reward = self.speed_weight * info["velocity"]
-        if info["crash"] or info["out_of_road"]:
-            reward += self.crash_penalty
+
         return reward
+
+
+class LaneCenteringRewardStrategy(RewardStrategy):
+    def __init__(self, centering_weight: float = 1.0):
+        self.centering_weight = centering_weight
+
+    def compute(self, observation, action, info) -> float:
+        reward = -self.centering_weight * abs(info["lateral_offset"])
+
+        return reward
+
+
+class AvoidCollisionRewardStrategy(RewardStrategy):
+    def __init__(self, crash_penalty=-10.0):
+        self.crash_penalty = crash_penalty
+
+    def compute(self, observation, action, info) -> float:
+        if info["crash"] or info["out_of_road"]:
+            return self.crash_penalty
+
+        return 0.0
