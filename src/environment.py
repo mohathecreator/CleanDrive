@@ -19,7 +19,7 @@ class EnvironmentWrapper(Env):
             self._metadrive_env.step(action)
         )
 
-        vehicle = self._metadrive_env.vehicle
+        vehicle = self._metadrive_env.agent
         _, lateral = (
             vehicle.navigation.current_lane.local_coordinates(vehicle.position)
         )
