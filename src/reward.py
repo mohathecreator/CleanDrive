@@ -48,3 +48,13 @@ class BrakingRewardStrategy(RewardStrategy):
             return -self.braking_weight * action[1]
 
         return 0.0
+
+
+class CompositeRewardStrategy(RewardStrategy):
+    def __init__(self, strategies: list[RewardStrategy]):
+        self.strategies = strategies
+
+    def compute(self, observation, action, info) -> float:
+        strat_gen = (strat.compute(observation, action, info)
+                     for strat in self.strategies)
+        return sum(strat_gen)
