@@ -36,3 +36,15 @@ class AvoidCollisionRewardStrategy(RewardStrategy):
             return self.crash_penalty
 
         return 0.0
+
+
+class BrakingRewardStrategy(RewardStrategy):
+    def __init__(self, braking_weight=1):
+        self.braking_weight = braking_weight
+
+    def compute(self, observation, action, info) -> float:
+        distance_threshold = 0.4
+        if info["front_distance"] < distance_threshold:
+            return -self.braking_weight * action[1]
+
+        return 0.0
