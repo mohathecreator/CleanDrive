@@ -18,7 +18,15 @@ class EnvironmentWrapper(Env):
         observation, metadrive_reward, terminated, truncated, info = (
             self._metadrive_env.step(action)
         )
+
+        vehicle = self._metadrive_env.vehicle
+        _, lateral = (
+            vehicle.navigation.current_lane.local_coordinates(vehicle.position)
+        )
+        info["lateral_offset"] = lateral
+
         reward = self.reward_strategy.compute(observation, action, info)
+
         return observation, reward, terminated, truncated, info
 
     def close(self):
