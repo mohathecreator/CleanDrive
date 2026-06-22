@@ -32,7 +32,13 @@ class EnvironmentWrapper(Env):
             num_lasers=vehicle.config["lidar"]["num_lasers"],
             distance=vehicle.config["lidar"]["distance"],
         )
-        info["front_distance"] = cloud_points[0]
+        front_window = 5
+        num_lasers = len(cloud_points)
+        front_rays = [
+            cloud_points[i % num_lasers]
+            for i in range(-front_window, front_window + 1)
+        ]
+        info["front_distance"] = min(front_rays)
 
         reward = self.reward_strategy.compute(observation, action, info)
 
