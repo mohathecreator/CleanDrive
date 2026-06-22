@@ -25,6 +25,15 @@ class EnvironmentWrapper(Env):
         )
         info["lateral_offset"] = lateral
 
+        lidar = self._metadrive_env.engine.get_sensor("lidar")
+        cloud_points, _ = lidar.perceive(
+            vehicle,
+            physics_world=self._metadrive_env.engine.physics_world.dynamic_world,
+            num_lasers=vehicle.config["lidar"]["num_lasers"],
+            distance=vehicle.config["lidar"]["distance"],
+        )
+        info["front_distance"] = cloud_points[0]
+
         reward = self.reward_strategy.compute(observation, action, info)
 
         return observation, reward, terminated, truncated, info
