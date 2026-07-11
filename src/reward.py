@@ -17,7 +17,7 @@ class SpeedRewardStrategy(RewardStrategy):
 
 
 class LaneCenteringRewardStrategy(RewardStrategy):
-    def __init__(self, weight: float = 2.0, half_lane_width: float = 1.75):
+    def __init__(self, weight: float = 2.0, half_lane_width: float = 0.6):
         self.weight = weight
         self.half_lane_width = half_lane_width
 
@@ -79,4 +79,5 @@ class CompositeRewardStrategy(RewardStrategy):
         self.strategies = strategies
 
     def compute(self, observation, action, info) -> float:
-        return sum(s.compute(observation, action, info) for s in self.strategies)
+        return sum(s.compute(observation, action, info)
+                   for s in self.strategies)

@@ -12,10 +12,10 @@ map_config = dict(use_render=False, manual_control=False,
 
 reward_strategy = CompositeRewardStrategy(strategies=[
     SpeedRewardStrategy(weight=2.0),
-    LaneCenteringRewardStrategy(weight=2.0),
+    LaneCenteringRewardStrategy(weight=3.0),
     AvoidCollisionRewardStrategy(crash_penalty=-100.0),
     MinSpeedPenaltyStrategy(weight=2.0, min_speed=10.0),
-    SteeringSmoothRewardStrategy(weight=0.08),
+    SteeringSmoothRewardStrategy(weight=0.15),
     BrakingRewardStrategy(weight=1.0, safe_distance=8.0),
 ])
 
