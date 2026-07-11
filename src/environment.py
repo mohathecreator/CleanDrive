@@ -1,4 +1,5 @@
-from gymnasium import Env
+import numpy as np
+from gymnasium import Env, spaces
 from metadrive.envs.metadrive_env import MetaDriveEnv
 from config import TrainingConfig
 
@@ -9,10 +10,24 @@ class EnvironmentWrapper(Env):
         self.reward_strategy = config.reward_strategy
         self._metadrive_env = MetaDriveEnv(config.map_config)
         self.action_space = self._metadrive_env.action_space
-        self.observation_space = self._metadrive_env.observation_space
+
+        base = self._metadrive_env.observation_space
+        self.observation_space = spaces.Box(
+            low=np.append(base.low, -5.0),
+            high=np.append(base.high, 5.0),
+            dtype=np.float32,
+        )
+
+    def _lateral_offset(self):
+        vehicle = self._metadrive_env.agent
+        _, lateral = vehicle.navigation.current_lane.local_coordinates(vehicle.position)
+        return float(lateral)
 
     def reset(self, *, seed=None, options=None):
-        return self._metadrive_env.reset(seed=seed)
+        obs, info = self._metadrive_env.reset(seed=seed)
+        lateral = self._lateral_offset()
+        info["lateral_offset"] = lateral
+        return np.append(obs, lateral).astype(np.float32), info
 
     def step(self, action):
         observation, metadrive_reward, terminated, truncated, info = (
@@ -32,7 +47,7 @@ class EnvironmentWrapper(Env):
             num_lasers=vehicle.config["lidar"]["num_lasers"],
             distance=vehicle.config["lidar"]["distance"],
         )
-        front_window = 5
+        front_window = 10
         num_lasers = len(cloud_points)
         front_rays = [
             cloud_points[i % num_lasers]
@@ -42,7 +57,7 @@ class EnvironmentWrapper(Env):
 
         reward = self.reward_strategy.compute(observation, action, info)
 
-        return observation, reward, terminated, truncated, info
+        return np.append(observation, lateral).astype(np.float32), reward, terminated, truncated, info
 
     def close(self):
         return self._metadrive_env.close()
