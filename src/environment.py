@@ -70,7 +70,10 @@ class EnvironmentWrapper(Env):
             num_lasers=vehicle.config["lidar"]["num_lasers"],
             distance=vehicle.config["lidar"]["distance"],
         )
-        front_window = 10
+        # Narrow frontal cone (+/-5 of 120 lasers ~= +/-15deg) so the
+        # proximity signal reacts to cars *in the path* and not to cars in
+        # the adjacent lane that the agent can simply pass.
+        front_window = 5
         num_lasers = len(cloud_points)
         front_rays = [
             cloud_points[i % num_lasers]

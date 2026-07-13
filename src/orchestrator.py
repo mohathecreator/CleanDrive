@@ -62,6 +62,7 @@ class TrainingOrchestrator:
                 self.environment,
                 learning_rate=self.config.learning_rate,
                 tensorboard_log=str(self.config.log_path),
+                use_sde=self.config.use_sde,
             )
         # save_freq counts callback calls (one per vec step), so divide the
         # target timestep interval by num_envs to actually hit ca. 50k steps.
