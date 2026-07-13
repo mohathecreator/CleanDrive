@@ -1,3 +1,5 @@
+"""Immutable training configuration and its validation."""
+
 from dataclasses import dataclass
 from reward import RewardStrategy
 from pathlib import Path
@@ -5,6 +7,18 @@ from pathlib import Path
 
 @dataclass(frozen=True)
 class TrainingConfig:
+    """All settings for one training run (frozen, i.e. read-only).
+
+    Attributes:
+        map_config: MetaDrive environment configuration dict.
+        reward_strategy: The composed reward function to optimise.
+        learning_rate: PPO optimiser step size.
+        total_timesteps: Number of environment steps to train for.
+        batch_size: PPO minibatch size.
+        checkpoint_path: Directory for model and normaliser checkpoints.
+        log_path: Directory for TensorBoard logs.
+    """
+
     map_config: dict
     reward_strategy: RewardStrategy
     learning_rate: float = 3e-4
@@ -14,6 +28,12 @@ class TrainingConfig:
     log_path: Path = Path("./logs")
 
     def validate(self):
+        """Fail fast on invalid settings or missing directories.
+
+        Raises ValueError for out-of-range hyper-parameters and
+        FileNotFoundError if the checkpoint or log directory is
+        missing (they must exist before a run starts).
+        """
         if not (0 < self.learning_rate < 1):
             raise ValueError(f"The learning_rate value should be between "
                              f"0 and 1. "
