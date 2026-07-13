@@ -7,41 +7,19 @@ from pathlib import Path
 
 @dataclass(frozen=True)
 class TrainingConfig:
-    """All settings for one training run (frozen, i.e. read-only).
+    """All settings for one training run (frozen, i.e. read-only)."""
 
-    Attributes:
-        map_config: MetaDrive environment configuration dict.
-        reward_strategy: The composed reward function to optimise.
-        learning_rate: PPO optimiser step size.
-        total_timesteps: Number of environment steps to train for.
-        batch_size: PPO minibatch size.
-        use_sde: Whether PPO uses gSDE (state-dependent exploration).
-        checkpoint_path: Directory for model and normaliser checkpoints.
-        log_path: Directory for TensorBoard logs.
-    """
-
-    map_config: dict
-    reward_strategy: RewardStrategy
-    learning_rate: float = 3e-4
-    total_timesteps: int = 100_000
-    batch_size: int = 64
-    use_sde: bool = True
-    checkpoint_path: Path = Path("./checkpoints")
-    log_path: Path = Path("./logs")
+    map_config: dict                  # MetaDrive environment config
+    reward_strategy: RewardStrategy   # composed reward function to optimise
+    learning_rate: float = 3e-4       # PPO optimiser step size
+    total_timesteps: int = 100_000    # env steps to train for
+    batch_size: int = 64              # PPO minibatch size
+    use_sde: bool = True              # gSDE (state-dependent exploration)
+    checkpoint_path: Path = Path("./checkpoints")  # model/normaliser dir
+    log_path: Path = Path("./logs")                # TensorBoard log dir
 
     def validate(self):
-        """Fail fast on invalid settings; create missing directories.
-
-        Every field gets the same two-tier check: wrong *type* raises
-        TypeError, wrong *value* raises ValueError. This also covers
-        fields that previously had no validation at all (``map_config``,
-        ``reward_strategy``), which used to fail much later with a
-        confusing, unrelated error deep inside training.
-
-        ``checkpoint_path``/``log_path`` are created (including any
-        missing parent directories) if they don't already exist, so a
-        run never fails just because someone forgot to ``mkdir`` first.
-        """
+        """Fail fast on invalid settings; create missing directories."""
         if not isinstance(self.map_config, dict):
             raise TypeError(f"map_config must be a dict. "
                             f"Current type: "

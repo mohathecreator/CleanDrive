@@ -10,22 +10,12 @@ from environment import EnvironmentWrapper
 
 
 class TrainingOrchestrator:
-    """Owns the vectorised environment and drives a training run.
-
-    Builds 'num_envs' parallel environments ('SubprocVecEnv') wrapped in
-    'VecNormalize' for running observation normalisation, and delegates the
-    model lifecycle to :class:'agent.AgentManager'.
-    """
+    """Owns the vectorised environment and drives a training run."""
 
     def __init__(self, config: TrainingConfig, num_envs: int = 24):
-        """Validate the config and build the normalised vector env.
-
-        'num_envs' should roughly match the number of CPU cores: this
-        workload is simulation-bound (MetaDrive physics on CPU), so
-        throughput scales with cores, not with GPU.
-        """
+        """Validate the config and build the normalised vector env."""
         self.config = config
-        self.num_envs = num_envs
+        self.num_envs = num_envs  # match CPU cores: sim-bound, not GPU-bound
         self.config.validate()
         env_fns = [self._make_env for _ in range(num_envs)]
         self.environment = VecNormalize(
@@ -38,17 +28,10 @@ class TrainingOrchestrator:
         return Monitor(EnvironmentWrapper(self.config))
 
     def run(self, resume_from=None):
-        """Train the agent, then save the model and the obs normaliser.
-
-        With 'resume_from' set, load that checkpoint together with its
-        saved 'VecNormalize' statistics and keep training; otherwise start
-        a fresh model. A 'CheckpointCallback' writes a checkpoint plus its
-        matching 'VecNormalize' stats roughly every 50k timesteps -- both
-        a safety net against policy collapse and what makes intermediate
-        checkpoints evaluable.
-        """
+        """Train the agent, then save the model and the obs normaliser."""
         normalizer_path = self.config.checkpoint_path / "vec_normalize.pkl"
         if resume_from:
+            # continue training: load the matching VecNormalize stats too
             self.environment = VecNormalize.load(
                 normalizer_path, self.environment.venv
             )
@@ -70,7 +53,7 @@ class TrainingOrchestrator:
             save_freq=max(50_000 // self.num_envs, 1),
             save_path=str(self.config.checkpoint_path),
             name_prefix="ppo_checkpoint",
-            save_vecnormalize=True,
+            save_vecnormalize=True,  # needed to evaluate mid-training
         )
         self.agent_manager.train(
             self.config.total_timesteps, callback=checkpoint_callback

@@ -1,8 +1,8 @@
 """Gymnasium wrapper around MetaDrive that adds lane-frame features.
 
 Beyond the native MetaDrive observation the wrapper appends three lane-frame
-channels (lateral offset, lateral velocity and (pi-normalised) heading
-error) and delegates the reward to a :class:'reward.RewardStrategy'.
+channels (lateral offset, lateral velocity and pi-normalised heading error)
+and delegates the reward to a :class:`reward.RewardStrategy`.
 """
 
 import numpy as np
@@ -12,18 +12,8 @@ from config import TrainingConfig
 
 
 class EnvironmentWrapper(Env):
-    """MetaDrive env with extra lane-frame observations and a plug-in reward.
-
-    The observation is the MetaDrive vector extended by three channels in the
-    fixed order '[lateral_offset, lateral_velocity, heading_error]'; both
-    :meth:'reset' and :meth:'step' emit that same order and length. Reward
-    comes entirely from 'config.reward_strategy'. The native MetaDrive
-    reward is discarded.
-
-    Sign convention (validated empirically): a positive 'heading_error'
-    means the car is rotated counter-clockwise relative to the lane, i.e.
-    steering left produces a positive error.
-    """
+    """MetaDrive env extended with lane-frame observations and a
+    plug-in reward strategy."""
 
     def __init__(self, config: TrainingConfig):
         """Build the MetaDrive env and the extended observation space."""
@@ -34,24 +24,20 @@ class EnvironmentWrapper(Env):
 
         base = self._metadrive_env.observation_space
         self.observation_space = spaces.Box(
+            # extra bounds for [lateral, lateral_velocity, heading_error]
             low=np.append(base.low, [-5.0, -2.0, -1.0]),
             high=np.append(base.high, [5.0, 2.0, 1.0]),
             dtype=np.float32,
         )
-        self._prev_lateral = 0.0
+        self._prev_lateral = 0.0  # last step's lateral offset
 
     def _lane_frame(self):
-        """Lateral offset and lane-tangent heading error of the agent.
-
-        Returns '(lateral, heading_error)' where 'lateral' is metres
-        from the centreline and 'heading_error' is the wrapped angle
-        (radians in [-pi, pi]) between the car's heading and the lane
-        tangent. A single projection feeds both values.
-        """
+        """Lateral offset and heading error relative to the lane tangent."""
         vehicle = self._metadrive_env.agent
         lane = vehicle.navigation.current_lane
         long, lateral = lane.local_coordinates(vehicle.position)
         heading_fn = getattr(lane, "heading_theta_at", None) or lane.heading_at
+        # positive = car rotated left of the lane tangent (steering left)
         heading_error = vehicle.heading_theta - heading_fn(long)
         heading_error = float(
             np.arctan2(np.sin(heading_error), np.cos(heading_error))
@@ -82,22 +68,13 @@ class EnvironmentWrapper(Env):
         return min(front_rays)
 
     def _extend_obs(self, obs, lateral, lateral_velocity, heading_error):
-        """Append the three lane-frame channels to a base observation.
-
-        The single place that assembles the extended vector, so 'reset'
-        and 'step' cannot drift in channel order or normalisation. The
-        heading channel is divided by pi to land in [-1, 1].
-        """
-        heading_norm = heading_error / np.pi
+        """Append the three lane-frame channels to a base observation."""
+        heading_norm = heading_error / np.pi  # normalise to [-1, 1]
         extended = np.append(obs, [lateral, lateral_velocity, heading_norm])
         return extended.astype(np.float32)
 
     def reset(self, *, seed=None, options=None):
-        """Reset the episode and return the extended initial observation.
-
-        Also resets the reward strategy so stateful terms (e.g. steering
-        smoothness) do not leak across episode boundaries.
-        """
+        """Reset the episode; return the extended initial observation."""
         obs, info = self._metadrive_env.reset(seed=seed)
         self.reward_strategy.reset()
         lateral, heading_error = self._lane_frame()
@@ -108,18 +85,13 @@ class EnvironmentWrapper(Env):
         return self._extend_obs(obs, lateral, 0.0, heading_error), info
 
     def step(self, action):
-        """Advance one step; return the extended observation and reward.
-
-        Populates 'info' with the lane-frame features and
-        'front_distance' that the reward strategies consume, then
-        computes the composite reward from them.
-        """
+        """Advance one step; return the extended observation and reward."""
         observation, _, terminated, truncated, info = (
             self._metadrive_env.step(action)
         )
 
         lateral, heading_error = self._lane_frame()
-        lateral_velocity = lateral - self._prev_lateral
+        lateral_velocity = lateral - self._prev_lateral  # per-step delta
         self._prev_lateral = lateral
         info["lateral_offset"] = lateral
         info["lateral_velocity"] = lateral_velocity

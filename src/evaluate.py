@@ -1,11 +1,7 @@
 """Entry point: renders a trained checkpoint driving.
 
-Loads the model and observation normaliser from ``checkpoint_path`` and
-runs the deterministic policy in a rendered MetaDrive window. Run with
-``python src/evaluate.py``.
-
-Episode outcomes (arrive_dest / out_of_road / crash vehicle / max step)
-are printed by MetaDrive itself as each episode ends.
+Loads the model and observation normaliser from checkpoint_path and runs
+the deterministic policy in a rendered MetaDrive window.
 """
 
 from pathlib import Path
@@ -23,15 +19,15 @@ map_config = dict(use_render=True, manual_control=False,
                   traffic_density=0.05,
                   vehicle_config=dict(lidar=dict(num_lasers=120, distance=50)))
 
-reward_strategy = SpeedRewardStrategy()
+reward_strategy = SpeedRewardStrategy()  # unused at eval time, needed by API
 config = TrainingConfig(map_config=map_config,
                         reward_strategy=reward_strategy,
                         checkpoint_path=Path("./checkpoint"))
 
 env = DummyVecEnv([lambda: EnvironmentWrapper(config)])
 env = VecNormalize.load(config.checkpoint_path / "vec_normalize.pkl", env)
-env.training = False
-env.norm_reward = False
+env.training = False     # freeze the running obs normalisation stats
+env.norm_reward = False  # rewards unused at eval time
 
 agent_manager = AgentManager()
 agent_manager.load(config.checkpoint_path / "ppo_model", env=env)
